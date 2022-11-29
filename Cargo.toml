@@ -2,3 +2,22 @@
 name = "la-patate-chaude" # the name of the package
 version = "0.1.0"    # the current version, obeying semver
 authors = ["Driss Kanouni <getMetamorph@github.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+server = { path = "server" }
+client = { path = "client" }
+shared = { path = "shared" }
+
+[workspace]
+members = [
+    "server",
+    "client",
+    "shared",
+]
+
+# If full-tree was not already inside root project 
+# its sub-packages should have been declared here like this
+# [workspace]
+# members = [ "libs/mylib1" ]
