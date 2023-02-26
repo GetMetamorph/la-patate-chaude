@@ -17,7 +17,7 @@ members = [
     "shared",
 ]
 
-# If full-tree was not already inside root project 
-# its sub-packages should have been declared here like this
-# [workspace]
-# members = [ "libs/mylib1" ]
+[[bin]]
+name = "la-patate-chaude"
+path = "main.rs"
+
