@@ -14,12 +14,13 @@ fn main() {
         Ok(mut stream) => {
             let mut buf_n = [0u8; 4];
 
-
+            //Send Hello
             let serialized = serde_json::to_string(&mut Message::Hello).expect("failed to serialized object");
             let serialized_size = serialized.len() as u32;
             stream.write(&serialized_size.to_be_bytes()).unwrap();
             stream.write(&serialized.as_bytes()).unwrap();
 
+            //Receive Welcome
             stream.read_exact(&mut buf_n).unwrap();
             let n = u32::from_be_bytes(buf_n);
             let mut buf = Vec::<u8>::new();
@@ -28,12 +29,13 @@ fn main() {
             let msg = String::from_utf8_lossy(&buf);
             println!("Receive message {msg} with size {s}");
 
-
+            //Send Subscribe
             let serialized = serde_json::to_string(&mut Message::Subscribe(Subscribe { name: "test".to_string() })).expect("failed to serialized object");
             let serialized_size = serialized.len() as u32;
             stream.write(&serialized_size.to_be_bytes()).unwrap();
             stream.write(&serialized.as_bytes()).unwrap();
 
+            //Receive SubscribeResult
             stream.read_exact(&mut buf_n).unwrap();
             let n = u32::from_be_bytes(buf_n);
             buf.resize(n as usize, 0);
@@ -41,6 +43,7 @@ fn main() {
             let msg = String::from_utf8_lossy(&buf);
             println!("Receive message {msg} with size {s}");
 
+            //Receive Challenge
             stream.read_exact(&mut buf_n).unwrap();
             let n = u32::from_be_bytes(buf_n);
             buf.resize(n as usize, 0);
@@ -48,14 +51,13 @@ fn main() {
             let msg = String::from_utf8_lossy(&buf);
             println!("Receive message {msg} with size {s}");
 
+            //Send ChallengeResult
             stream.read_exact(&mut buf_n).unwrap();
             let n = u32::from_be_bytes(buf_n);
             buf.resize(n as usize, 0);
             let s = stream.read(&mut buf).expect("Cannot read");
             let msg = String::from_utf8_lossy(&buf);
             println!("Receive message {msg} with size {s}");
-
-
 
         }
         Err(err) => { panic!("ERROR: {err}") }
