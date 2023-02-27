@@ -73,11 +73,13 @@ pub struct ReportedChallengeResult {
     pub value: ChallengeValue
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct RoundSummary {
     pub challenge: String,
     pub chain: Vec<ReportedChallengeResult>
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct PublicPlayer {
     name: String,
     stream_id: String,
@@ -87,14 +89,18 @@ pub struct PublicPlayer {
     total_used_time: f64
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct PublicLeaderBoard {
     pub playerList: Vec<PublicPlayer>
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct EndOfGame {
     pub leader_board: PublicLeaderBoard
 }
 
+
+#[derive(Serialize, Deserialize)]
 pub enum Message {
     Hello,
     Welcome(Welcome),
