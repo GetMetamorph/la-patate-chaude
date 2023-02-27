@@ -4,6 +4,7 @@ use std::net::TcpStream;
 
 use shared::messageStruct::{*};
 use shared::messageStruct::Challenge::RecoverSecret;
+use shared::messageStruct::Message::ChallengeTimeout;
 
 pub fn send(mut stream: &TcpStream, message: Message) {
     let serialized = serde_json::to_string(&message).expect("Fail serialize");
@@ -15,30 +16,35 @@ pub fn send(mut stream: &TcpStream, message: Message) {
 
 
 fn on_challenge_message(
-
-    stream: &TcpStream,
+    stream: &mut TcpStream,
     challenge: Challenge,
     game_info: &mut InfoGame,
     name: String,
-
 ) {
     match challenge {
         RecoverSecret(input) => {
-            println!("run RecoverSecret {input:?}");
-            let test = RecoverSecret::new(input);
-            let value = test.solve();
-            let challenge_answer = ChallengeAnswer::MD5HashCash(value);
+            println!("Running RecoverSecret with input: {input}");
+            let recover_input = RecoverSecretInput {
+                word_count: input.word_count,
+                letters: input.letters,
+                tuple_sizes: input.tuple_sizes,
+            };
+            let request_body = serde_json::to_string(&recover_input).unwrap();
+            send(&stream, Message::ChallengeAnswer(ChallengeAnswer::RecoverSecret));
+
+            let mut buf_n = [0u8; 4];
+            stream.read_exact(&mut buf_n).unwrap();
+            let n = u32::from_be_bytes(buf_n);
+            let mut buf = Vec::<u8>::new();
+            buf.resize(n as usize, 0);
+            stream.read_exact(&mut buf).unwrap();
+            let response_body = String::from_utf8_lossy(&buf);
+            let output: RecoverSecretOutput = serde_json::from_str(&response_body).unwrap();
+            let challenge_answer = ChallengeAnswer::RecoverSecret(output.secret_sentence);
             on_message_challenge_answer(stream, challenge_answer, game_info, name);
         }
-        RecoverSecret(input) => {
-            let test = RS::new(input);
-            let value = test.solve();
-            let challenge_answer = ChallengeAnswer::RecoverSecret(value);
-            on_message_challenge_answer(stream, challenge_answer, game_info, name);
-        }
-        Challenge::ChallengeTimeout(input) => {
-            println!("test= {input:?}");
-            println!("test 129");
+        ChallengeTimeout(input) => {
+            println!("ChallengeTimeout with input: {input}");
         }
     }
 }
