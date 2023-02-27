@@ -105,6 +105,7 @@ pub enum Message {
     Hello,
     Welcome(Welcome),
     Subscribe(Subscribe),
+    SubscribeResult(SubscribeResult),
     PublicLeaderBoard(Vec<PublicPlayer>),
     Challenge(Challenge),
     ChallengeResult(ChallengeResult),

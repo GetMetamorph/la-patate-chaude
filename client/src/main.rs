@@ -1,8 +1,17 @@
 use std::io::{Read, Write};
+use std::mem::transmute;
 use std::net::TcpStream;
 
-use shared::messageStruct::{Challenge, ChallengeResult, ChallengeTimeout, EndOfGame, Hello, PublicLeaderBoard, RoundSummary, Subscribe, Welcome, Message, ChallengeAnswer};
+use shared::messageStruct::{*};
 use shared::messageStruct::Challenge::RecoverSecret;
+
+pub fn send(mut stream: &TcpStream, message: Message) {
+    let serialized = serde_json::to_string(&message).expect("Fail serialize");
+    let serialized_size = serialized.len() as u32;
+    stream.write(&serialized_size.to_be_bytes()).unwrap();
+    stream.write(&serialized.as_bytes()).unwrap();
+}
+
 
 
 fn on_challenge_message(
@@ -14,14 +23,14 @@ fn on_challenge_message(
 
 ) {
     match challenge {
-        Challenge::RecoverSecret(input) => {
+        RecoverSecret(input) => {
             println!("run RecoverSecret {input:?}");
-            let test = RecoverSecret()::new(input);
+            let test = RecoverSecret::new(input);
             let value = test.solve();
             let challenge_answer = ChallengeAnswer::MD5HashCash(value);
             on_message_challenge_answer(stream, challenge_answer, game_info, name);
         }
-        Challenge::RecoverSecret(input) => {
+        RecoverSecret(input) => {
             let test = RS::new(input);
             let value = test.solve();
             let challenge_answer = ChallengeAnswer::RecoverSecret(value);
@@ -42,52 +51,41 @@ fn main() {
     match stream {
         Ok(mut stream) => {
             let mut buf_n = [0u8; 4];
+            send(&stream, Message::Hello);
 
-            //Send Hello
-            let serialized = serde_json::to_string(&mut Message::Hello).expect("failed to serialized object");
-            let serialized_size = serialized.len() as u32;
-            stream.write(&serialized_size.to_be_bytes()).unwrap();
-            stream.write(&serialized.as_bytes()).unwrap();
+            loop {
+                match stream.read_exact(&mut buf_n) {
+                    Ok(_) => {}
+                    Err(_) => {}
+                }
+                let n = u32::from_be_bytes(buf_n);
+                let mut buf = Vec::<u8>::new();
+                buf.resize(n as usize, 0);
+                let s = stream.read(&mut buf).expect("Error read");
+                let msg = String::from_utf8_lossy(&buf);
+                println!("Receive message {msg} with size {s}");
 
-            //Receive Welcome
-            stream.read_exact(&mut buf_n).unwrap();
-            let n = u32::from_be_bytes(buf_n);
-            let mut buf = Vec::<u8>::new();
-            buf.resize(n as usize, 0);
-            let s = stream.read(&mut buf).expect("Cannot read");
-            let msg = String::from_utf8_lossy(&buf);
-            println!("Receive message {msg} with size {s}");
-
-            //Send Subscribe
-            let serialized = serde_json::to_string(&mut Message::Subscribe(Subscribe { name: "test".to_string() })).expect("failed to serialized object");
-            let serialized_size = serialized.len() as u32;
-            stream.write(&serialized_size.to_be_bytes()).unwrap();
-            stream.write(&serialized.as_bytes()).unwrap();
-
-            //Receive SubscribeResult
-            stream.read_exact(&mut buf_n).unwrap();
-            let n = u32::from_be_bytes(buf_n);
-            buf.resize(n as usize, 0);
-            let s = stream.read(&mut buf).expect("Cannot read");
-            let msg = String::from_utf8_lossy(&buf);
-            println!("Receive message {msg} with size {s}");
-
-            //Receive Challenge
-            stream.read_exact(&mut buf_n).unwrap();
-            let n = u32::from_be_bytes(buf_n);
-            buf.resize(n as usize, 0);
-            let s = stream.read(&mut buf).expect("Cannot read");
-            let msg = String::from_utf8_lossy(&buf);
-            println!("Receive message {msg} with size {s}");
-
-            //Send ChallengeResult
-            stream.read_exact(&mut buf_n).unwrap();
-            let n = u32::from_be_bytes(buf_n);
-            buf.resize(n as usize, 0);
-            let s = stream.read(&mut buf).expect("Cannot read");
-            let msg = String::from_utf8_lossy(&buf);
-            println!("Receive message {msg} with size {s}");
-
+                match serde_json::from_str(&msg).expect("Fail serialize") {
+                    Message::Hello => { }
+                    Message::Welcome(welcome) => {
+                        send(&stream, Message::Subscribe(Subscribe { name: "test".to_string() }))
+                    }
+                    Message::Subscribe(_) => { }
+                    Message::SubscribeResult(sub) => {
+                        let code = match sub {
+                            SubscribeResult::Ok => { 0 }
+                            SubscribeResult::Err(ref err) => { 1 }
+                        };
+                        if code == 1 { break; }
+                    }
+                    Message::PublicLeaderBoard(lead) => {}
+                    Message::Challenge(lead) => {}
+                    Message::ChallengeTimeout(lead) => {}
+                    Message::ChallengeResult(lead) => {}
+                    Message::RoundSummary(lead) => {}
+                    Message::EndOfGame(lead) => { break; }
+                }
+            }
         }
         Err(err) => { panic!("ERROR: {err}") }
     }
