@@ -28,6 +28,7 @@ fn main() {
             let msg = String::from_utf8_lossy(&buf);
             println!("Receive message {msg} with size {s}");
 
+
             let serialized = serde_json::to_string(&mut Message::Subscribe(Subscribe { name: "test".to_string() })).expect("failed to serialized object");
             let serialized_size = serialized.len() as u32;
             stream.write(&serialized_size.to_be_bytes()).unwrap();
@@ -37,8 +38,23 @@ fn main() {
             let n = u32::from_be_bytes(buf_n);
             buf.resize(n as usize, 0);
             let s = stream.read(&mut buf).expect("Cannot read");
-           let msg = String::from_utf8_lossy(&buf);
+            let msg = String::from_utf8_lossy(&buf);
             println!("Receive message {msg} with size {s}");
+
+            stream.read_exact(&mut buf_n).unwrap();
+            let n = u32::from_be_bytes(buf_n);
+            buf.resize(n as usize, 0);
+            let s = stream.read(&mut buf).expect("Cannot read");
+            let msg = String::from_utf8_lossy(&buf);
+            println!("Receive message {msg} with size {s}");
+
+            stream.read_exact(&mut buf_n).unwrap();
+            let n = u32::from_be_bytes(buf_n);
+            buf.resize(n as usize, 0);
+            let s = stream.read(&mut buf).expect("Cannot read");
+            let msg = String::from_utf8_lossy(&buf);
+            println!("Receive message {msg} with size {s}");
+
 
 
         }
