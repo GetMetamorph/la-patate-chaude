@@ -1,9 +1,38 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
-use shared::messageStruct::{Challenge, ChallengeResult, ChallengeTimeout, EndOfGame, Hello, PublicLeaderBoard, RoundSummary, Subscribe, Welcome, Message};
+use shared::messageStruct::{Challenge, ChallengeResult, ChallengeTimeout, EndOfGame, Hello, PublicLeaderBoard, RoundSummary, Subscribe, Welcome, Message, ChallengeAnswer};
+use shared::messageStruct::Challenge::RecoverSecret;
 
 
+fn on_challenge_message(
+
+    stream: &TcpStream,
+    challenge: Challenge,
+    game_info: &mut InfoGame,
+    name: String,
+
+) {
+    match challenge {
+        Challenge::RecoverSecret(input) => {
+            println!("run RecoverSecret {input:?}");
+            let test = RecoverSecret()::new(input);
+            let value = test.solve();
+            let challenge_answer = ChallengeAnswer::MD5HashCash(value);
+            on_message_challenge_answer(stream, challenge_answer, game_info, name);
+        }
+        Challenge::RecoverSecret(input) => {
+            let test = RS::new(input);
+            let value = test.solve();
+            let challenge_answer = ChallengeAnswer::RecoverSecret(value);
+            on_message_challenge_answer(stream, challenge_answer, game_info, name);
+        }
+        Challenge::ChallengeTimeout(input) => {
+            println!("test= {input:?}");
+            println!("test 129");
+        }
+    }
+}
 
 fn main() {
 
