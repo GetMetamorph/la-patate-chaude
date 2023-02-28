@@ -2,7 +2,10 @@ pub fn add(a: i32, b: i32) -> i32 {
     a + b
 }
 
-pub mod messageStruct;
+pub mod challenge;
+pub mod message_struct;
+pub mod hash_code;
+pub mod recover_secret;
 
 #[cfg(test)]
 mod tests {

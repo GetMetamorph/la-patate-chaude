@@ -37,14 +37,35 @@ pub struct RecoverSecretOut {
     pub secret: String
 }
 
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MD5HashCashInput {
+    // complexity in bits
+    pub complexity: u32,
+    // message to sign
+    pub message: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MD5HashCashOutput {
+    // Seed used to solve the challenge
+    pub seed: u64,
+    // hashcode found using seed + message
+    pub hashcode: String,
+}
+
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Challenge {
-    RecoverSecret(RecoverSecretIn)
+    RecoverSecret(RecoverSecretIn),
+    MD5HashCash(MD5HashCashInput),
+    ChallengeTimeout(ChallengeTimeout)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ChallengeAnswer {
-    RecoverSecret(RecoverSecretOut)
+    RecoverSecret(RecoverSecretOut),
+    MD5HashCash(MD5HashCashOutput)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -91,7 +112,7 @@ pub struct PublicPlayer {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PublicLeaderBoard {
-    pub playerList: Vec<PublicPlayer>
+    pub player_list: Vec<PublicPlayer>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
